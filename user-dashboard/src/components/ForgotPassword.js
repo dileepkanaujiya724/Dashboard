@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import "./Auth.css"; // Optional, matches your other pages
+import "./Auth.css";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -14,12 +14,14 @@ function ForgotPassword() {
 
     try {
       const res = await axios.post("http://localhost:8083/api/forgot/request", { email });
-      setMessage(res.data.message || "Reset link sent successfully!");
-      console.log("Reset token (for testing):", res.data.token);
+      // 🖥️ MODIFIED: Expecting JSON response with .data.message
+      setMessage(res.data.message || "Reset link sent successfully!"); 
+      // console.log("Reset token (for testing):", res.data.token); // Optional for testing
     } catch (err) {
       console.error(err);
+      // 🖥️ MODIFIED: Extracting error message from the structured response
       const errorMsg =
-        err.response?.data?.message || "Failed to send reset link. Please try again.";
+        err.response?.data?.message || "Failed to send reset link. Please try again."; 
       setMessage(errorMsg);
     } finally {
       setLoading(false);

@@ -6,11 +6,11 @@ import com.example.forgot_password_service.service.EmailService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.HashMap;
-//import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,35 +22,59 @@ public class ForgotPasswordController {
 
     @Autowired
     private UserRepository userRepository;
-@Autowired
-private EmailService emailService;
 
-@PostMapping("/request")
-public String requestReset(@RequestBody Map<String, String> body) {
-    String email = body.get("email");
-    Optional<User> userOpt = userRepository.findByEmail(email);
-    if (userOpt.isEmpty()) {
-        throw new RuntimeException("Email not found!");
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder; // password hashing
+
+    // ================================
+    // 1️⃣ REQUEST RESET LINK
+    // ================================
+    @PostMapping("/request")
+    public ResponseEntity<Map<String, String>> requestReset(@RequestBody Map<String, String> body) {
+
+        String email = body.get("email");
+        Map<String, String> response = new HashMap<>();
+
+        Optional<User> userOpt = userRepository.findByEmail(email);
+
+        // To prevent email enumeration attacks, always return success response
+        if (userOpt.isEmpty()) {
+            response.put("message", "If an account with that email exists, a reset link has been sent.");
+            return ResponseEntity.ok(response);
+        }
+
+        User user = userOpt.get();
+
+        // Generate token
+        String token = UUID.randomUUID().toString();
+
+        user.setResetToken(token);
+        user.setResetTokenExpiry(Instant.now().plusSeconds(3600)); // 1 hour expiry
+        userRepository.save(user);
+
+        // Send email
+        emailService.sendResetEmail(email, token);
+
+        response.put("message", "Reset link sent successfully!");
+        // For testing:
+        // response.put("token", token);
+
+        return ResponseEntity.ok(response);
     }
 
-    User user = userOpt.get();
-    String token = UUID.randomUUID().toString();
-    user.setResetToken(token);
-    user.setResetTokenExpiry(Instant.now().plusSeconds(3600));
-    userRepository.save(user);
-
-    emailService.sendResetEmail(email, token); // ✅ Send mail here
-    return "Reset token generated successfully and email sent!";
-}
-
-
-    // Reset Password
+    // ================================
+    // 2️⃣ RESET PASSWORD
+    // ================================
     @PostMapping("/reset")
     public ResponseEntity<Map<String, String>> resetPassword(
             @RequestParam String token,
             @RequestParam String newPassword) {
 
         Map<String, String> response = new HashMap<>();
+
         Optional<User> userOpt = userRepository.findByResetToken(token);
 
         if (userOpt.isEmpty()) {
@@ -60,12 +84,16 @@ public String requestReset(@RequestBody Map<String, String> body) {
 
         User user = userOpt.get();
 
-        if (user.getResetTokenExpiry().isBefore(Instant.now())) {
+        // Check expiry
+        if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(Instant.now())) {
             response.put("message", "Token expired!");
             return ResponseEntity.badRequest().body(response);
         }
 
-        user.setPasswordHash(newPassword);
+        // Hashing new password
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+
+        // Clear token
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
         userRepository.save(user);

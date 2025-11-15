@@ -5,6 +5,8 @@ import CreateUser from "./components/CreateUser";
 import ForgotPassword from "./components/ForgotPassword";
 import UpdateProfile from "./components/UpdateProfile";
 import Dashboard from "./components/Dashboard";
+import ResetPassword from "./components/ResetPassword";
+
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
         <Route path="/forgot" element={<ForgotPassword />} />
         <Route path="/update" element={<UpdateProfile />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/reset" element={<ResetPassword />} />
+
 
       </Routes>
     </Router>

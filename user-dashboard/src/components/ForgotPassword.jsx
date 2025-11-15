@@ -5,6 +5,7 @@ import "./Auth.css";
 function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [type, setType] = useState("info"); 
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -14,15 +15,15 @@ function ForgotPassword() {
 
     try {
       const res = await axios.post("http://localhost:8083/api/forgot/request", { email });
-      // 🖥️ MODIFIED: Expecting JSON response with .data.message
-      setMessage(res.data.message || "Reset link sent successfully!"); 
-      // console.log("Reset token (for testing):", res.data.token); // Optional for testing
+
+      setType("success");
+      setMessage(res.data.message || "Reset link sent successfully!");
+
     } catch (err) {
-      console.error(err);
-      // 🖥️ MODIFIED: Extracting error message from the structured response
-      const errorMsg =
-        err.response?.data?.message || "Failed to send reset link. Please try again."; 
-      setMessage(errorMsg);
+      setType("error");
+      setMessage(
+        err.response?.data?.message || "Failed to send reset link. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ function ForgotPassword() {
           </button>
         </form>
 
-        {message && <p className="auth-message">{message}</p>}
+        {message && <p className={`auth-message ${type}`}>{message}</p>}
       </div>
     </div>
   );

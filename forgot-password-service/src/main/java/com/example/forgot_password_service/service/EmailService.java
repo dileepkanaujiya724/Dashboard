@@ -12,10 +12,15 @@ public class EmailService {
     private JavaMailSender mailSender;
 
     public void sendResetEmail(String to, String token) {
+
         SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("dilipk@itio.in");  // CRITICAL
         message.setTo(to);
         message.setSubject("Password Reset Request");
-        message.setText("Click the link to reset your password: http://localhost:3000/reset?token=" + token);
+
+        String link = "http://localhost:3000/reset?token=" + token;
+        message.setText("Click below to reset your password:\n\n" + link);
+
         mailSender.send(message);
     }
 }

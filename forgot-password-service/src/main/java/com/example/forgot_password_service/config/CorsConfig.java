@@ -10,7 +10,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration
 public class CorsConfig {
 
-    // 🔑 ADDED: Bean for Password Hashing (Crucial for security)
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

@@ -18,8 +18,7 @@ public class SecurityConfig {
                 .anyRequest().permitAll()
             )
             .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable())
-            .logout(logout -> logout.disable());
+            .httpBasic(httpBasic -> httpBasic.disable());
 
         return http.build();
     }

@@ -27,7 +27,7 @@ public class ForgotPasswordController {
     private EmailService emailService;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // password hashing
+    private PasswordEncoder passwordEncoder;
 
     // ================================
     // 1️⃣ REQUEST RESET LINK
@@ -40,7 +40,7 @@ public class ForgotPasswordController {
 
         Optional<User> userOpt = userRepository.findByEmail(email);
 
-        // To prevent email enumeration attacks, always return success response
+        // Anti-enumeration response
         if (userOpt.isEmpty()) {
             response.put("message", "If an account with that email exists, a reset link has been sent.");
             return ResponseEntity.ok(response);
@@ -52,16 +52,12 @@ public class ForgotPasswordController {
         String token = UUID.randomUUID().toString();
 
         user.setResetToken(token);
-        user.setResetTokenExpiry(Instant.now().plusSeconds(3600)); // 1 hour expiry
+        user.setResetTokenExpiry(Instant.now().plusSeconds(3600)); // 1 hour
         userRepository.save(user);
 
-        // Send email
         emailService.sendResetEmail(email, token);
 
         response.put("message", "Reset link sent successfully!");
-        // For testing:
-        // response.put("token", token);
-
         return ResponseEntity.ok(response);
     }
 
@@ -84,16 +80,12 @@ public class ForgotPasswordController {
 
         User user = userOpt.get();
 
-        // Check expiry
         if (user.getResetTokenExpiry() == null || user.getResetTokenExpiry().isBefore(Instant.now())) {
             response.put("message", "Token expired!");
             return ResponseEntity.badRequest().body(response);
         }
 
-        // Hashing new password
         user.setPasswordHash(passwordEncoder.encode(newPassword));
-
-        // Clear token
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
         userRepository.save(user);
